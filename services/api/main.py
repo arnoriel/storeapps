@@ -5,13 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.redis import close_redis
+from routers.auth import router as auth_router  # ← tambah ini
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup
     yield
-    # shutdown
     await close_redis()
 
 
@@ -35,3 +34,6 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "env": settings.APP_ENV}
+
+
+app.include_router(auth_router)  # ← tambah ini
