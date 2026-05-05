@@ -9,7 +9,7 @@ Toko online single-brand dengan dashboard owner multi-cabang.
 ## Prerequisites
 - Python 3.12+
 - Node.js 20+
-- pnpm 9+
+- npm 9+
 - PostgreSQL 16
 - Redis
 

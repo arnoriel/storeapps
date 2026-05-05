@@ -1,7 +1,8 @@
 import math
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import File, UploadFile, APIRouter, Depends, HTTPException, Query, status
+from services.storage import upload_product_image
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +67,27 @@ async def get_product(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
     return product
 
+@router.post("/{product_id}/image", response_model=ProductResponse)
+async def upload_image(
+    product_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produk tidak ditemukan",
+        )
+
+    image_url = await upload_product_image(file, product_id)
+    product.image_url = image_url
+
+    await db.flush()
+    await db.refresh(product)
+    return product
 
 # ─── PROTECTED ────────────────────────────────────────────────────────────────
 

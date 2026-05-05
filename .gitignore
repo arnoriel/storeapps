@@ -20,7 +20,7 @@ node_modules/
 .turbo/
 *.log
 npm-debug.log*
-pnpm-debug.log*
+npm-debug.log*
 
 # OS
 .DS_Store
