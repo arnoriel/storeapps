@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from routers.products import router as products_router
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,4 +37,5 @@ async def health_check():
     return {"status": "ok", "env": settings.APP_ENV}
 
 
-app.include_router(auth_router)  # ← tambah ini
+app.include_router(auth_router)
+app.include_router(products_router)
