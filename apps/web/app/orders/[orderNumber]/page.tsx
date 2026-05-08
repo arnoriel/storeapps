@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import StoreHeader from "@/components/shared/StoreHeader";
-import OrderStatus from "@/components/store/OrderStatus";
+import PaymentStatus from "@/components/store/PaymentStatus";
+import OrderSummaryCard from "@/components/store/OrderSummaryCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -19,14 +20,33 @@ interface Order {
   created_at: string;
 }
 
+interface PaymentLink {
+  order_number: string;
+  payment_url: string | null;
+  paid_status: string;
+}
+
 async function getOrder(orderNumber: string): Promise<Order | null> {
   try {
     const res = await fetch(`${API_URL}/api/v1/orders/${orderNumber}`, {
       cache: "no-store",
     });
-    if (res.status === 404) return null;
     if (!res.ok) return null;
     return res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getPaymentLink(orderNumber: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/v1/orders/${orderNumber}/payment-link`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data: PaymentLink = await res.json();
+    return data.payment_url ?? null;
   } catch {
     return null;
   }
@@ -38,9 +58,7 @@ export async function generateMetadata({
   params: Promise<{ orderNumber: string }>;
 }): Promise<Metadata> {
   const { orderNumber } = await params;
-  return {
-    title: `Order ${orderNumber} — Status Pesanan`,
-  };
+  return { title: `Order ${orderNumber} — Status Pesanan` };
 }
 
 export default async function OrderPage({
@@ -49,14 +67,24 @@ export default async function OrderPage({
   params: Promise<{ orderNumber: string }>;
 }) {
   const { orderNumber } = await params;
-  const order = await getOrder(orderNumber);
+  const [order, paymentUrl] = await Promise.all([
+    getOrder(orderNumber),
+    getPaymentLink(orderNumber),
+  ]);
 
   if (!order) notFound();
 
   return (
     <>
       <StoreHeader />
-      <OrderStatus order={order} />
+      <div className="max-w-lg mx-auto px-4 py-10 space-y-6">
+        <PaymentStatus
+          orderNumber={order.order_number}
+          initialPaidStatus={order.paid_status}
+          paymentUrl={paymentUrl}
+        />
+        <OrderSummaryCard order={order} />
+      </div>
     </>
   );
 }
