@@ -5,24 +5,23 @@ import { useCartStore } from "@/lib/stores/cart.store";
 import { useCheckoutStore } from "@/lib/stores/checkout.store";
 import StoreHeader from "@/components/shared/StoreHeader";
 import LocationPicker from "@/components/store/LocationPicker";
+import ShippingOptions from "@/components/store/ShippingOptions";
+import OrderSummary from "@/components/store/OrderSummary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 export default function ShippingPage() {
   const router = useRouter();
-  const item = useCartStore((state) => state.item);
-  const { customerData, coordinates, auto_address, setCoordinates, setAutoAddress } =
+  const item = useCartStore((s) => s.item);
+  const { customerData, coordinates, selected_shipping, setCoordinates, setAutoAddress } =
     useCheckoutStore();
 
-  // Guard: harus ada cart dan customer data
   if (!item || !customerData) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <p className="text-gray-500 mb-4">Silakan mulai dari awal.</p>
-        <Link href="/">
-          <Button variant="outline">Ke Beranda</Button>
-        </Link>
+        <Link href="/"><Button variant="outline">Ke Beranda</Button></Link>
       </div>
     );
   }
@@ -35,15 +34,10 @@ export default function ShippingPage() {
     setAutoAddress(address);
   };
 
-  const handleNext = () => {
-    if (!coordinates) return;
-    router.push("/checkout/payment");
-  };
-
   return (
     <>
       <StoreHeader />
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-8 text-sm">
           <span className="text-gray-400">1. Data Diri</span>
@@ -53,34 +47,53 @@ export default function ShippingPage() {
           <span className="text-gray-400">3. Pembayaran</span>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lokasi Pengiriman</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <LocationPicker
-              onLocationSelect={handleLocationSelect}
-              initialCoords={coordinates}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            {/* Lokasi */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Lokasi Pengiriman</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LocationPicker
+                  onLocationSelect={handleLocationSelect}
+                  initialCoords={coordinates}
+                />
+              </CardContent>
+            </Card>
 
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => router.back()}
-              >
+            {/* Ekspedisi */}
+            {coordinates && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Pilih Ekspedisi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ShippingOptions />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tombol navigasi */}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => router.back()}>
                 ← Kembali
               </Button>
               <Button
                 className="flex-1"
-                disabled={!coordinates}
-                onClick={handleNext}
+                disabled={!selected_shipping}
+                onClick={() => router.push("/checkout/payment")}
               >
                 Lanjut ke Pembayaran →
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Summary */}
+          <div className="md:col-span-1">
+            <OrderSummary />
+          </div>
+        </div>
       </div>
     </>
   );
