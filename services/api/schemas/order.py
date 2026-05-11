@@ -56,3 +56,14 @@ class PaymentLinkResponse(BaseModel):
     order_number: str
     payment_url: str | None
     paid_status: str
+
+class OrderStatusUpdate(BaseModel):
+    order_status: str
+
+    @field_validator("order_status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        valid = {"CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"}
+        if v not in valid:
+            raise ValueError(f"Status tidak valid. Pilihan: {valid}")
+        return v

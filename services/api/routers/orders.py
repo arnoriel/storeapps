@@ -1,3 +1,10 @@
+import asyncio
+import uuid
+
+from core.dependencies import get_current_user
+from schemas.order import OrderStatusUpdate
+from core.redis import get_redis
+from services.events import publish_order_event
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +29,7 @@ router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 async def create_order(
     body: OrderCreate,
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),  # tambah ini
 ):
     # 1. Lock produk dengan SELECT FOR UPDATE — atomic stock check
     result = await db.execute(
@@ -90,6 +98,18 @@ async def create_order(
     # 6. Commit semua perubahan
     await db.commit()
 
+    asyncio.create_task(
+        publish_order_event(
+            channel="orders:new",
+            order_number=order_number,
+            customer_name=body.customer_name,
+            total_amount=body.total_amount,
+            order_status="PENDING",
+            paid_status="UNPAID",
+            redis=redis,
+        )
+    )
+
     return OrderCreateResponse(
         order_number=order_number,
         payment_url=order.hitpay_payment_url,
@@ -137,3 +157,39 @@ async def get_payment_link(
         payment_url=order.hitpay_payment_url,
         paid_status=order.paid_status,
     )
+
+@router.put("/{order_id}/status", response_model=OrderStatusResponse)
+async def update_order_status(
+    order_id: uuid.UUID,
+    body: OrderStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+    _: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order tidak ditemukan",
+        )
+
+    order.order_status = body.order_status
+    await db.commit()
+    await db.refresh(order)
+
+    # Publish ke Redis — fire-and-forget
+    asyncio.create_task(
+        publish_order_event(
+            channel="orders:updated",
+            order_number=order.order_number,
+            customer_name=order.customer_name,
+            total_amount=float(order.total_amount),
+            order_status=order.order_status,
+            paid_status=order.paid_status,
+            redis=redis,
+        )
+    )
+
+    return order
