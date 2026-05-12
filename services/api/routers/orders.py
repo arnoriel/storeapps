@@ -4,6 +4,7 @@ import uuid
 from core.dependencies import get_current_user
 from schemas.order import OrderStatusUpdate
 from core.redis import get_redis
+from core.dependencies import get_current_user, require_role
 from services.events import publish_order_event
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -193,3 +194,73 @@ async def update_order_status(
     )
 
     return order
+
+@router.patch("/{order_id}/claim", response_model=OrderStatusResponse)
+async def claim_order(
+    order_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order tidak ditemukan",
+        )
+
+    if order.handled_by_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order sudah di-claim",
+        )
+
+    order.handled_by_id = current_user.id
+    await db.commit()
+    await db.refresh(order)
+    return order
+
+@router.get("", response_model=list[OrderStatusResponse])
+async def list_orders(
+    order_status: str | None = None,
+    paid_status: str | None = None,
+    search: str | None = None,
+    page: int = 1,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import or_, desc
+
+    query = select(Order)
+
+    # Filter berdasarkan role
+    if current_user.role == "BRANCH":
+        query = query.where(
+            or_(
+                Order.handled_by_id == current_user.id,
+                Order.handled_by_id == None,
+            )
+        )
+
+    if order_status:
+        query = query.where(Order.order_status == order_status)
+
+    if paid_status:
+        query = query.where(Order.paid_status == paid_status)
+
+    if search:
+        query = query.where(
+            or_(
+                Order.order_number.ilike(f"%{search}%"),
+                Order.customer_name.ilike(f"%{search}%"),
+                Order.customer_email.ilike(f"%{search}%"),
+            )
+        )
+
+    query = query.order_by(desc(Order.created_at))
+    query = query.offset((page - 1) * limit).limit(limit)
+
+    result = await db.execute(query)
+    return result.scalars().all()

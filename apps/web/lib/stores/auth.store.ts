@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       // Hanya persist refreshToken dan user — accessToken di memory
       partialize: (state) => ({
+        accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user,
       }),
