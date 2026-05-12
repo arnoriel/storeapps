@@ -37,6 +37,7 @@ class OrderCreateResponse(BaseModel):
 
 
 class OrderStatusResponse(BaseModel):
+    id: uuid.UUID
     order_number: str
     order_status: str
     paid_status: str
