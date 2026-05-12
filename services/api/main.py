@@ -4,6 +4,7 @@ from routers.shipping import router as shipping_router
 from routers.orders import router as orders_router
 from routers.webhooks import router as webhooks_router
 from routers.realtime import router as realtime_router
+from routers.dashboard import router as dashboard_router
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,3 +48,4 @@ app.include_router(shipping_router)
 app.include_router(orders_router)
 app.include_router(webhooks_router)
 app.include_router(realtime_router)
+app.include_router(dashboard_router)

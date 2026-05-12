@@ -1,9 +1,11 @@
 "use client";
 
 import DashboardShell from "@/components/dashboard/DashboardShell";
-import { useOrderStore } from "@/lib/stores/order.store";
+import MetricCard from "@/components/dashboard/MetricCard";
+import { OrdersPerDayChart, RevenuePerWeekChart } from "@/components/dashboard/OrdersChart";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
-function formatRupiah(amount: number): string {
+function formatRupiah(amount: number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -12,55 +14,56 @@ function formatRupiah(amount: number): string {
 }
 
 export default function OverviewPage() {
-  const { orders, isConnected } = useOrderStore();
+  const { data: stats, isLoading } = useDashboardStats();
 
   return (
     <DashboardShell>
       <div className="space-y-6">
         <h2 className="text-xl font-bold">Overview</h2>
 
-        {/* Live orders feed */}
-        <div className="bg-white rounded-xl border p-4">
-          <h3 className="font-semibold mb-4 text-sm text-gray-700">
-            Live Order Feed
-          </h3>
+        {/* Metric Cards */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : stats ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MetricCard
+              title="Omzet Bulan Ini"
+              value={formatRupiah(stats.omzet_this_month)}
+              subtitle="Order dengan status PAID"
+              icon="💰"
+            />
+            <MetricCard
+              title="Order Bulan Ini"
+              value={stats.orders_this_month}
+              subtitle="Total semua order"
+              icon="📦"
+            />
+            <MetricCard
+              title="Total Refund"
+              value={formatRupiah(stats.total_refunds)}
+              subtitle="v2.0 feature"
+              icon="↩️"
+            />
+            <MetricCard
+              title="Produk Aktif"
+              value={stats.active_products}
+              subtitle="Tersedia di storefront"
+              icon="🛍️"
+            />
+          </div>
+        ) : null}
 
-          {orders.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">
-              {isConnected
-                ? "Menunggu order masuk..."
-                : "Connecting..."}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {orders.map((order) => (
-                <div
-                  key={order.order_number}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm"
-                >
-                  <div>
-                    <span className="font-mono font-semibold text-xs">
-                      {order.order_number}
-                    </span>
-                    <p className="text-gray-500">{order.customer_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatRupiah(order.total_amount)}</p>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        order.paid_status === "PAID"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {order.paid_status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Charts */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <OrdersPerDayChart data={stats.orders_per_day} />
+            <RevenuePerWeekChart data={stats.revenue_per_week} />
+          </div>
+        )}
       </div>
     </DashboardShell>
   );
