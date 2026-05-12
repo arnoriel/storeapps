@@ -85,11 +85,27 @@ export function useOrderWS() {
     isMounted.current = true;
     connect();
 
+    // Tambah ini:
+    const handleOnline = () => {
+      reconnectDelay.current = MIN_RECONNECT_DELAY; // reset backoff
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      connect();
+    };
+
+    const handleOffline = () => {
+      setConnected(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
       isMounted.current = false;
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
       setConnected(false);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, [connect]);
+  }, [connect, setConnected]);
 }
