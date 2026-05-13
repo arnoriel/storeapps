@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -16,6 +17,7 @@ from routers.realtime import router as realtime_router
 from routers.shipping import router as shipping_router
 from routers.webhooks import router as webhooks_router
 
+logger = logging.getLogger(__name__)
 
 async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     return JSONResponse(
@@ -25,6 +27,12 @@ async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded) ->
         },
     )
 
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Terjadi kesalahan internal. Silakan coba lagi."},
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +50,9 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+
+if settings.APP_ENV == "production":
+    app.add_exception_handler(Exception, generic_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
