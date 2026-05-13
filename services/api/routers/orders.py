@@ -165,7 +165,7 @@ async def update_order_status(
     body: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN", "BRANCH"])),
 ):
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()

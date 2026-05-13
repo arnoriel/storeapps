@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from core.dependencies import get_current_user
+from core.dependencies import get_current_user, require_role
 from models.product import Product
 from models.user import User
 from schemas.product import (
@@ -72,7 +72,7 @@ async def upload_image(
     product_id: uuid.UUID,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN"])),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
@@ -95,7 +95,7 @@ async def upload_image(
 async def create_product(
     body: ProductCreate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN"])),
 ):
     product = Product(**body.model_dump())
     db.add(product)
@@ -109,7 +109,7 @@ async def update_product(
     product_id: uuid.UUID,
     body: ProductUpdate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN"])),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
@@ -130,7 +130,7 @@ async def update_stock(
     product_id: uuid.UUID,
     body: ProductStockUpdate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN", "BRANCH"])),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
@@ -147,7 +147,7 @@ async def update_stock(
 async def delete_product(
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_role(["ADMIN"])),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
