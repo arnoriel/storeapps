@@ -1,17 +1,29 @@
 from contextlib import asynccontextmanager
-from routers.products import router as products_router
-from routers.shipping import router as shipping_router
-from routers.orders import router as orders_router
-from routers.webhooks import router as webhooks_router
-from routers.realtime import router as realtime_router
-from routers.dashboard import router as dashboard_router
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
 from core.config import settings
+from core.limiter import limiter
 from core.redis import close_redis
-from routers.auth import router as auth_router  
+from routers.auth import router as auth_router
+from routers.dashboard import router as dashboard_router
+from routers.orders import router as orders_router
+from routers.products import router as products_router
+from routers.realtime import router as realtime_router
+from routers.shipping import router as shipping_router
+from routers.webhooks import router as webhooks_router
+
+
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": f"Terlalu banyak request. Limit: {exc.limit}. Coba lagi dalam beberapa saat.",
+        },
+    )
 
 
 @asynccontextmanager
@@ -27,6 +39,9 @@ app = FastAPI(
     redoc_url=None if settings.APP_ENV == "production" else "/redoc",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,5 +62,5 @@ app.include_router(products_router)
 app.include_router(shipping_router)
 app.include_router(orders_router)
 app.include_router(webhooks_router)
-app.include_router(realtime_router)
 app.include_router(dashboard_router)
+app.include_router(realtime_router)

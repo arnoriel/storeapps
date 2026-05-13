@@ -2,10 +2,11 @@ import asyncio
 import json
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import StreamingResponse
 
 from core.redis import get_redis
+from core.limiter import limiter
 from core.security import decode_token
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,8 @@ router = APIRouter(tags=["realtime"])
 # ─── SSE — Customer Payment Status ────────────────────────────────────────────
 
 @router.get("/api/v1/stream/payment/{order_number}")
-async def payment_stream(order_number: str):
+@limiter.limit("20/minute")
+async def payment_stream(request: Request, order_number: str):
     async def event_generator():
         redis = await get_redis()
         pubsub = redis.pubsub()

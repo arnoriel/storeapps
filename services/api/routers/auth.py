@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.limiter import limiter
 from core.dependencies import get_current_user, require_role
 from core.redis import get_redis
 from core.security import (
@@ -27,7 +28,9 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     body: LoginRequest,
     db: AsyncSession = Depends(get_db),
 ):

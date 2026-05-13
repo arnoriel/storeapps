@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.limiter import limiter
 from models.product import Product
 from models.user import User
 from schemas.shipping import (
@@ -24,7 +25,9 @@ COURIER_NAMES = {
 
 
 @router.post("/check", response_model=ShippingCheckResponse)
+@limiter.limit("30/minute")
 async def check_shipping(
+    request: Request,
     body: ShippingCheckRequest,
     db: AsyncSession = Depends(get_db),
 ):

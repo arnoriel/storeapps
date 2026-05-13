@@ -6,11 +6,12 @@ from schemas.order import OrderStatusUpdate
 from core.redis import get_redis
 from core.dependencies import get_current_user, require_role
 from services.events import publish_order_event
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.limiter import limiter
 from models.order import Order
 from models.product import Product
 from models.user import User
@@ -27,7 +28,9 @@ router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
 
 @router.post("", response_model=OrderCreateResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_order(
+    request: Request,
     body: OrderCreate,
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),  # tambah ini
