@@ -67,7 +67,13 @@ export function useUpdateOrderStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, order_status }: { orderId: string; order_status: string }) => {
+    mutationFn: async ({
+      orderId,
+      order_status,
+    }: {
+      orderId: string;
+      order_status: string;
+    }) => {
       const res = await fetch(`${API_URL}/api/v1/orders/${orderId}/status`, {
         method: "PUT",
         headers,
@@ -76,11 +82,46 @@ export function useUpdateOrderStatus() {
       if (!res.ok) throw new Error("Gagal update status");
       return res.json();
     },
-    onSuccess: () => {
+
+    // Optimistic update — UI langsung berubah sebelum server confirm
+    onMutate: async ({ orderId, order_status }) => {
+      // Cancel outgoing refetch supaya tidak override optimistic update
+      await queryClient.cancelQueries({ queryKey: ["orders"] });
+
+      // Snapshot data sebelum update (untuk rollback)
+      const previousOrders = queryClient.getQueriesData<Order[]>({
+        queryKey: ["orders"],
+      });
+
+      // Update cache langsung
+      queryClient.setQueriesData<Order[]>({ queryKey: ["orders"] }, (old) => {
+        if (!old) return old;
+        return old.map((order) =>
+          order.id === orderId ? { ...order, order_status } : order
+        );
+      });
+
+      return { previousOrders };
+    },
+
+    // Rollback jika server error
+    onError: (_err, _vars, context) => {
+      if (context?.previousOrders) {
+        context.previousOrders.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error("Gagal update status order");
+    },
+
+    // Refetch setelah selesai (baik sukses maupun error)
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+
+    onSuccess: () => {
       toast.success("Status order diperbarui");
     },
-    onError: () => toast.error("Gagal update status order"),
   });
 }
 
