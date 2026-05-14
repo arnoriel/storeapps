@@ -33,3 +33,27 @@ npm install
 cp .env.local.example .env.local  # lalu isi nilainya
 npm dev
 ```
+
+## Demo Data Seeder
+
+Untuk mengisi database dengan data demo:
+
+```bash
+cd services/api
+source .venv/bin/activate
+python scripts/seed_demo_data.py
+```
+
+> ⚠️ **WARNING:** Script ini akan menghapus semua data existing dan mengisi ulang dengan data demo.
+
+### Akun yang dibuat:
+| Role    | Username    | Password   |
+|---------|-------------|------------|
+| ADMIN   | admin       | admin123   |
+| BRANCH  | cabang_bdg  | branch123  |
+| BRANCH  | cabang_jkt  | branch123  |
+
+### Data yang dibuat:
+- 10 produk demo (1 stok habis untuk testing)
+- 5 order dengan berbagai status (PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED)
+- Store location: Bandung (origin pengiriman)
