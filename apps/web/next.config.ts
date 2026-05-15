@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "**.picsum.photos" },
+      { protocol: "https", hostname: "fastly.picsum.photos" },
     ],
   },
   async headers() {
@@ -35,10 +37,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-const finalConfig = withPWA(nextConfig);
-
-// Force images config tidak hilang setelah di-wrap withPWA
-export default {
-  ...finalConfig,
-  images: nextConfig.images,
-};
+export default withPWA(nextConfig);
