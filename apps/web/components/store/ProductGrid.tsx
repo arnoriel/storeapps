@@ -1,5 +1,5 @@
 import ProductCard from "./ProductCard";
-import EmptyState from "./EmptyState";
+import EmptyState from "@/components/shared/EmptyState";
 
 interface Product {
   id: string;
@@ -11,13 +11,15 @@ interface Product {
   weight_grams: number;
 }
 
-interface ProductGridProps {
-  products: Product[];
-}
-
-export default function ProductGrid({ products }: ProductGridProps) {
+export default function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
-    return <EmptyState />;
+    return (
+      <EmptyState
+        icon="🛍️"
+        title="Belum ada produk"
+        subtitle="Produk akan muncul di sini setelah ditambahkan oleh toko."
+      />
+    );
   }
 
   return (

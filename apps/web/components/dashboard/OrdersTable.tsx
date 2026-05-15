@@ -14,6 +14,8 @@ import OrderStatusDropdown from "./OrderStatusDropdown";
 import ClaimOrderButton from "./ClaimOrderButton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import SkeletonRow from "@/components/shared/SkeletonRow";
+import SharedEmptyState from "@/components/shared/EmptyState";
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -172,15 +174,19 @@ export default function OrdersTable() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-gray-400">
-                  Memuat data...
-                </td>
-              </tr>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} cols={7} />
+                ))}
+              </>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-gray-400">
-                  Tidak ada order ditemukan
+                <td colSpan={columns.length}>
+                  <SharedEmptyState
+                    icon="📋"
+                    title="Tidak ada order"
+                    subtitle="Order yang masuk akan muncul di sini."
+                  />
                 </td>
               </tr>
             ) : (
