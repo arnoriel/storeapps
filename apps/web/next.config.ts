@@ -15,10 +15,8 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "picsum.photos" },
     ],
   },
   async headers() {
@@ -37,4 +35,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+const finalConfig = withPWA(nextConfig);
+
+// Force images config tidak hilang setelah di-wrap withPWA
+export default {
+  ...finalConfig,
+  images: nextConfig.images,
+};

@@ -3,6 +3,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useRouter } from "next/navigation";
+import { handleApiError } from "@/lib/handleApiError";
+import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -31,7 +33,6 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (payload: LoginPayload) => {
-      // Step 1: Login
       const loginRes = await fetch(`${API_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,7 +46,6 @@ export function useLogin() {
 
       const tokens: TokenResponse = await loginRes.json();
 
-      // Step 2: Fetch user data
       const meRes = await fetch(`${API_URL}/api/v1/auth/me`, {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
@@ -65,10 +65,18 @@ export function useLogin() {
         user
       );
 
-      // Set cookie untuk middleware (expire 15 menit)
       document.cookie = `auth-token=${tokens.access_token}; path=/; max-age=900`;
 
       router.push("/dashboard/overview");
+    },
+
+    onError: (error: Error) => {
+      // Error tetap ditampilkan di form via error state LoginForm.tsx
+      // Toast sebagai fallback untuk error yang tidak ter-handle di UI
+      const msg = handleApiError(error);
+      if (msg.includes("Sesi") || msg.includes("server") || msg.includes("internet")) {
+        toast.error(msg);
+      }
     },
   });
 }

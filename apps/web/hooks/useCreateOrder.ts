@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/handleApiError";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -50,7 +51,7 @@ export function useCreateOrder() {
     },
 
     onError: (error: Error) => {
-      toast.error(error.message || "Terjadi kesalahan, silakan coba lagi");
+      toast.error(handleApiError(error));
     },
   });
 }

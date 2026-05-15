@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/handleApiError"; 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -111,7 +112,7 @@ export function useUpdateOrderStatus() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error("Gagal update status order");
+      toast.error(handleApiError(_err));  // ← pakai handleApiError
     },
 
     // Refetch setelah selesai (baik sukses maupun error)
@@ -142,6 +143,6 @@ export function useClaimOrder() {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success("Order berhasil di-claim");
     },
-    onError: () => toast.error("Gagal claim order"),
+    onError: (error) => toast.error(handleApiError(error)),
   });
 }

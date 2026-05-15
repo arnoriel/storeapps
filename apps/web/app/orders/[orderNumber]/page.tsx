@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import StoreHeader from "@/components/shared/StoreHeader";
-import PaymentStatus from "@/components/store/PaymentStatus";
-import OrderSummaryCard from "@/components/store/OrderSummaryCard";
+import OrderStatus from "@/components/store/OrderStatus";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -77,14 +76,7 @@ export default async function OrderPage({
   return (
     <>
       <StoreHeader />
-      <div className="max-w-lg mx-auto px-4 py-10 space-y-6">
-        <PaymentStatus
-          orderNumber={order.order_number}
-          initialPaidStatus={order.paid_status}
-          paymentUrl={paymentUrl}
-        />
-        <OrderSummaryCard order={order} />
-      </div>
+      <OrderStatus order={order} paymentUrl={paymentUrl} />
     </>
   );
 }

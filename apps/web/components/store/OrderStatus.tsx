@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface Order {
   order_number: string;
@@ -15,6 +17,11 @@ interface Order {
   shipping_cost: number;
   total_amount: number;
   created_at: string;
+}
+
+interface OrderStatusProps {
+  order: Order;
+  paymentUrl: string | null;
 }
 
 function formatRupiah(amount: number): string {
@@ -48,9 +55,37 @@ function getOrderStatusBadge(status: string) {
   return <Badge variant="outline">{map[status] ?? status}</Badge>;
 }
 
-export default function OrderStatus({ order }: { order: Order }) {
+export default function OrderStatus({ order, paymentUrl }: OrderStatusProps) {
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+
+  const handleContinuePayment = async (url: string | null) => {
+    if (url) {
+      window.location.href = url;
+      return;
+    }
+
+    // Fetch ulang payment link kalau tidak ada
+    setIsLoadingPayment(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders/${order.order_number}/payment-link`
+      );
+      const data = await res.json();
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        toast.error("Link pembayaran tidak tersedia. Hubungi toko.");
+      }
+    } catch {
+      toast.error("Koneksi bermasalah. Coba lagi.");
+    } finally {
+      setIsLoadingPayment(false);
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
+      {/* Status header */}
       <div className="text-center mb-8">
         {order.paid_status === "PAID" ? (
           <>
@@ -62,7 +97,7 @@ export default function OrderStatus({ order }: { order: Order }) {
           <>
             <div className="text-5xl mb-3">❌</div>
             <h1 className="text-2xl font-bold text-gray-900">Pembayaran Gagal</h1>
-            <p className="text-gray-500 mt-1">Silakan coba lagi</p>
+            <p className="text-gray-500 mt-1">Silakan coba bayar ulang</p>
           </>
         ) : (
           <>
@@ -73,6 +108,7 @@ export default function OrderStatus({ order }: { order: Order }) {
         )}
       </div>
 
+      {/* Detail order */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Detail Pesanan</CardTitle>
@@ -96,7 +132,7 @@ export default function OrderStatus({ order }: { order: Order }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Email</span>
-            <span>{order.customer_email}</span>
+            <span className="text-xs">{order.customer_email}</span>
           </div>
           {order.shipping_courier && (
             <div className="flex justify-between">
@@ -111,21 +147,61 @@ export default function OrderStatus({ order }: { order: Order }) {
         </CardContent>
       </Card>
 
+      {/* Action buttons */}
       <div className="mt-6 space-y-3">
-        {order.paid_status === "UNPAID" && (
-          <Button
-            className="w-full"
-            onClick={async () => {
-              const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders/${order.order_number}/payment-link`
-              );
-              const data = await res.json();
-              if (data.payment_url) window.location.href = data.payment_url;
-            }}
-          >
-            Lanjutkan Pembayaran
-          </Button>
+        {/* UNPAID — ada payment URL */}
+        {order.paid_status === "UNPAID" && paymentUrl && (
+          <>
+            <Button
+              className="w-full"
+              disabled={isLoadingPayment}
+              onClick={() => handleContinuePayment(paymentUrl)}
+            >
+              {isLoadingPayment ? "Memproses..." : "Lanjutkan Pembayaran"}
+            </Button>
+            <p className="text-xs text-gray-400 text-center">
+              Kamu akan diarahkan ke halaman pembayaran HitPay yang aman
+            </p>
+          </>
         )}
+
+        {/* UNPAID — payment URL tidak ada */}
+        {order.paid_status === "UNPAID" && !paymentUrl && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600 text-sm font-medium mb-1">
+              Link pembayaran tidak tersedia
+            </p>
+            <p className="text-red-400 text-xs mb-3">
+              Hubungi toko untuk mendapatkan link pembayaran baru.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isLoadingPayment}
+              onClick={() => handleContinuePayment(null)}
+            >
+              {isLoadingPayment ? "Memuat..." : "Coba Ambil Link Baru"}
+            </Button>
+          </div>
+        )}
+
+        {/* FAILED — retry */}
+        {order.paid_status === "FAILED" && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600 text-sm font-medium mb-3">
+              Pembayaran tidak berhasil diproses
+            </p>
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={isLoadingPayment}
+              onClick={() => handleContinuePayment(paymentUrl)}
+            >
+              {isLoadingPayment ? "Memuat..." : "Coba Bayar Lagi"}
+            </Button>
+          </div>
+        )}
+
         <Link href="/">
           <Button variant="outline" className="w-full">
             Kembali ke Toko
