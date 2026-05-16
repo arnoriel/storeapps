@@ -144,14 +144,12 @@ export default function PaymentPage() {
 
             {/* Tombol bayar */}
             <Button
-              className="w-full"
+              className="w-full min-h-[44px]"
               size="lg"
               onClick={handlePay}
               disabled={isPending}
             >
-              {isPending
-                ? "Memproses..."
-                : `Bayar ${formatRupiah(total)}`}
+              {isPending ? "Memproses..." : `Bayar ${formatRupiah(total)}`}
             </Button>
 
             <p className="text-xs text-gray-400 text-center">

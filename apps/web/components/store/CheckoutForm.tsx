@@ -56,7 +56,7 @@ export default function CheckoutForm() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-8 text-sm">
+      <div className="flex items-center gap-2 mb-8 text-sm overflow-x-auto pb-1">
         <span className="font-semibold text-black">1. Data Diri</span>
         <span className="text-gray-300">→</span>
         <span className="text-gray-400">2. Pengiriman</span>
@@ -128,7 +128,11 @@ export default function CheckoutForm() {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="w-full min-h-[44px]"
+                  disabled={isSubmitting}
+                >
                   Lanjut ke Pengiriman →
                 </Button>
               </form>
@@ -137,7 +141,7 @@ export default function CheckoutForm() {
         </div>
 
         {/* Order Summary */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 order-first md:order-last">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Pesanan</CardTitle>

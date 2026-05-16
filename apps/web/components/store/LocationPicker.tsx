@@ -100,7 +100,7 @@ export default function LocationPicker({
   return (
     <div className="space-y-3">
       {/* Map container */}
-      <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border">
+      <div className="relative w-full h-52 md:h-80 rounded-xl overflow-hidden border">
         <div ref={mapContainerRef} className="w-full h-full" />
         {!isMapLoaded && (
           <div className="absolute inset-0 bg-gray-100 flex items-center justify-center text-sm text-gray-400">

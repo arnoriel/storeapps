@@ -23,13 +23,13 @@ export default function OverviewPage() {
 
         {/* Metric Cards */}
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4"> 
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : stats ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4"> 
             <MetricCard
               title="Omzet Bulan Ini"
               value={formatRupiah(stats.omzet_this_month)}

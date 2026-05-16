@@ -157,7 +157,7 @@ export default function OrdersTable() {
 
       {/* Table */}
       <div className="border rounded-xl overflow-hidden bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[700px]">
           <thead className="bg-gray-50 border-b">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>

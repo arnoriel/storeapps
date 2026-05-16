@@ -21,7 +21,9 @@ export default function ShippingPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <p className="text-gray-500 mb-4">Silakan mulai dari awal.</p>
-        <Link href="/"><Button variant="outline">Ke Beranda</Button></Link>
+        <Link href="/">
+          <Button variant="outline" className="min-h-[44px]">Ke Beranda</Button>
+        </Link>
       </div>
     );
   }
@@ -38,8 +40,8 @@ export default function ShippingPage() {
     <>
       <StoreHeader />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 mb-8 text-sm">
+        {/* Step indicator — scroll horizontal di mobile */}
+        <div className="flex items-center gap-2 mb-8 text-sm overflow-x-auto pb-1 whitespace-nowrap">
           <span className="text-gray-400">1. Data Diri</span>
           <span className="text-gray-300">→</span>
           <span className="font-semibold text-black">2. Pengiriman</span>
@@ -48,7 +50,12 @@ export default function ShippingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
+          {/* Order summary — tampil di atas di mobile, kanan di desktop */}
+          <div className="md:col-span-1 md:order-last">
+            <OrderSummary />
+          </div>
+
+          <div className="md:col-span-2 md:order-first space-y-6">
             {/* Lokasi */}
             <Card>
               <CardHeader>
@@ -74,24 +81,23 @@ export default function ShippingPage() {
               </Card>
             )}
 
-            {/* Tombol navigasi */}
+            {/* Tombol navigasi — full width, min 44px */}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => router.back()}>
+              <Button
+                variant="outline"
+                className="flex-1 min-h-[44px]"
+                onClick={() => router.back()}
+              >
                 ← Kembali
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 min-h-[44px]"
                 disabled={!selected_shipping}
                 onClick={() => router.push("/checkout/payment")}
               >
                 Lanjut ke Pembayaran →
               </Button>
             </div>
-          </div>
-
-          {/* Summary */}
-          <div className="md:col-span-1">
-            <OrderSummary />
           </div>
         </div>
       </div>
